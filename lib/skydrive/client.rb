@@ -6,56 +6,27 @@ module Skydrive
     include Operations
     base_uri "https://apis.live.net/v5.0/"
     format :json
+
     def initialize access_token
       @access_token = access_token
-      self.class.default_params :access_token => @access_token.token
     end
 
-    # Do a 'get' request
-    # @param [String] url the url to get
-    # @param [Hash] options Additonal options to be passed
-    def get url, options={}
-      response = filtered_response(self.class.get(url, {:query => options}))
-    end
-
-    # Do a 'post' request
-    # @param [String] url the url to post
-    # @param [Hash] options Additonal options to be passed
-    def post url, options={}
-      response = filtered_response(self.class.post(url, {:body => options}))
-    end
-
-    # Do a 'move' request
-    # @param [String] url the url to move
-    # @param [Hash] options Additonal options to be passed
-    def move url, options={}
-      response = filtered_response(self.class.move(url, {:body => options}))
-    end
-
-    # Do a 'delete' request
-    # @param [String] url the url to delete
-    def delete url
-      response = filtered_response(self.class.delete(url))
-    end
-
-    # Do a put request
-    # @param [String] url the url to put
-    # @param [Hash] options Additonal options to be passed
-    def put url, options={}
-      response = filtered_response(self.class.put(url, {:body => options}))
+    %w( get post put move delete ).each do |method|
+      define_method(method.to_sym) do |url, options = {}|
+        options = { access_token: @access_token.token }.update(options)
+        filtered_response(self.class.send(method, url, query: options))
+      end
     end
 
     # Get the acting user
     # @return [Hash]
     def me
-      response = JSON.load(self.class.get("/me").parsed_response)
+      get("/me")
     end
 
     # Refresh the access token
     def refresh_access_token!
       @access_token = access_token.refresh!
-      self.class.default_params :access_token => @access_token.token
-      @access_token
     end
 
     # Return a Skdrive::Object sub class
